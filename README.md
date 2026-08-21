@@ -22,7 +22,7 @@ $$
 
 ここで、次の定理（LR 構文解析の基本原理 (Knuth)）が成り立つ。ただし、 $\stackrel{\Rightarrow}{\tiny{rm}}$ は最右導出を表す。
 
-> 分文脈自由文法 $G$ に対して、 $C_G = \{\alpha \beta \mid S \stackrel{*}{\stackrel{\Rightarrow}{\tiny{rm}}} \alpha A w \stackrel{\Rightarrow}{\tiny{rm}} \alpha \beta w\}$ は正規言語である。
+> 文脈自由文法 $G$ に対して、 $C_G = \{\alpha \beta \mid S \stackrel{*}{\stackrel{\Rightarrow}{\tiny{rm}}} \alpha A w \stackrel{\Rightarrow}{\tiny{rm}} \alpha \beta w\}$ は正規言語である。
 >
 > $C_G$ を受理する FA $N_G = (Q, \Sigma, \delta, q_0, F)$ は次のように構成される。
 >
