@@ -8,7 +8,7 @@
 
 LR 構文解析法を用いて、与えられた入力文字列が LR(0) 文法を満たすかを確認するパーザジェネレータを実装する。
 
-文脈自由文法 $G = (N, T, P, S)$ を考える。ただし、$N$ を非終端文字の集合、$T$ を終端文字の集合、$P$ を生成規則の集合、$S \in N$ を開始記号とする。
+文脈自由文法 $G = (N, T, P, S)$ を考える。ただし、 $N$ を非終端文字の集合、 $T$ を終端文字の集合、 $P$ を生成規則の集合、 $S \in N$ を開始記号とする。
 
 この文法に対して、入力文字列 $w \in T^*$ がどのように還元されるかを計算したい。特に、入力文字列を左から順に読んでいき、部分的に還元可能な部分文字列を見つけたら、それを非終端記号に置き換えていくことで、最終的に開始記号 $S$ に還元できるかどうかを判定したい。これは、以下のような還元系列を構成する。
 
@@ -16,11 +16,11 @@ $$
 w_1w_2\cdots w_n \Leftarrow \beta_1A_1w_2w_3\cdots w_n \Leftarrow \beta_1\beta_2A_2w_3\cdots w_n \Leftarrow \cdots \Leftarrow S
 $$
 
-ここで、$\beta_i$ は終端記号の列、$A_i$ は非終端記号である。これは、最右導出の逆順である。
+ここで、 $\beta_i$ は終端記号の列、 $A_i$ は非終端記号である。これは、最右導出の逆順である。
 
-ここで、次の定理（LR 構文解析の基本原理 (Knuth)）が成り立つ。ただし、$\stackrel{\Rightarrow}{\tiny{rm}}$ は最右導出を表す。
+ここで、次の定理（LR 構文解析の基本原理 (Knuth)）が成り立つ。ただし、 $\stackrel{\Rightarrow}{\tiny{rm}}$ は最右導出を表す。
 
-> 分文脈自由文法 $G$ に対して、$C_G = \{\alpha \beta \mid S \stackrel{*}{\stackrel{\Rightarrow}{\tiny{rm}}} \alpha A w \stackrel{\Rightarrow}{\tiny{rm}} \alpha \beta w\}$ は正規言語である。
+> 分文脈自由文法 $G$ に対して、 $C_G = \{\alpha \beta \mid S \stackrel{*}{\stackrel{\Rightarrow}{\tiny{rm}}} \alpha A w \stackrel{\Rightarrow}{\tiny{rm}} \alpha \beta w\}$ は正規言語である。
 >
 > $C_G$ を受理する FA $N_G = (Q, \Sigma, \delta, q_0, F)$ は次のように構成される。
 >
@@ -38,9 +38,9 @@ $$
 >
 > $\delta([A \to \alpha \cdot B \beta], \varepsilon) = \{[B \to \cdot \gamma] \mid B \to \gamma \in P\}.$
 >
-> ただし、$Q$ は状態集合、$\Sigma$ は入力アルファベット、$\delta$ は状態遷移関数、$q_0$ は初期状態、$F$ は受理状態の集合、$\alpha, \beta, \gamma$ は終端記号の列、$A, B$ は非終端記号、$v$ は終端記号または非終端記号である。
+> ただし、 $Q$ は状態集合、 $\Sigma$ は入力アルファベット、 $\delta$ は状態遷移関数、 $q_0$ は初期状態、 $F$ は受理状態の集合、 $\alpha, \beta, \gamma$ は終端記号の列、 $A, B$ は非終端記号、 $v$ は終端記号または非終端記号である。
 
-よって、$C_G$ を受理する有限オートマトン（以下 FA）を構成し、文字列を入力して受理状態に到達した段階で停止することで、最右導出の逆順で 1 ステップ還元できる。
+よって、 $C_G$ を受理する有限オートマトン（以下 FA）を構成し、文字列を入力して受理状態に到達した段階で停止することで、最右導出の逆順で 1 ステップ還元できる。
 
 ### アルゴリズムの効率化
 
@@ -48,17 +48,17 @@ $$
 
 ### 文法の拡張
 
-文法 $G$ に対して、$G' = (N', T', P', S)$ を次のように定義する。
+文法 $G$ に対して、 $G' = (N', T', P', S)$ を次のように定義する。
 
 $$
 N' = N \cup \{S'\}, \quad T' = T \cup \{\$\}, \quad P' = P \cup \{S' \to S\$\}
 $$
 
-ここで、$S'$ は生成規則の右辺に現れない新しい開始記号であり、$\$$ は生成規則の左辺に現れない新しい終端記号である。入力文字列の末尾に $\$$ を付加することで、入力文字列の終端を明示的に表すことができる。
+ここで、 $S'$ は生成規則の右辺に現れない新しい開始記号であり、 $ は生成規則の左辺に現れない新しい終端記号である。入力文字列の末尾に $ を付加することで、入力文字列の終端を明示的に表すことができる。
 
 ### ACTION 表
 
-定理に従って構成された FA は Subset Construction によって DFA に変換することができる。構成された DFA を $D_G$ とする。$D_G$ の状態は、$N_G$ の状態の集合、すなわち $[A \to \alpha \cdot \beta]$ の集合である。ここで、文法 $G$ が LR(0) 文法であるとき、$D_G$ の状態は、還元項（$[B \to \cdot \gamma]$）を高々 1 つしか含まない。
+定理に従って構成された FA は Subset Construction によって DFA に変換することができる。構成された DFA を $D_G$ とする。$D_G$ の状態は、 $N_G$ の状態の集合、すなわち $[A \to \alpha \cdot \beta]$ の集合である。ここで、文法 $G$ が LR(0) 文法であるとき、 $D_G$ の状態は、還元項（ $[B \to \cdot \gamma]$ ）を高々 1 つしか含まない。
 
 よって、各状態においてやるべきこと（アクション）は以下の 2 つに分類できる。
 
@@ -111,4 +111,4 @@ ACTION 表の構成は [actionTable](src/main/scala/lr0pg/LR0.scala#L154) プロ
 
 ### 構文解析アルゴリズム
 
-構文解析アルゴリズムは [Parser.scala](src/main/scala/lr0pg/Parser.scala) 内で `Parser` クラスとして実装されている。[parse](src/main/scala/lr0pg/Parser.scala#L9) メソッドでは上記アルゴリズムを愚直に実装している。
+構文解析アルゴリズムは [Parser.scala](src/main/scala/lr0pg/Parser.scala) 内で `Parser` クラスとして実装されている。[parse](src/main/scala/lr0pg/Parser.scala#L9) メソッドでは上記アルゴリズムを忠実に実装している。
