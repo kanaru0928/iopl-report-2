@@ -12,7 +12,6 @@ class DFA[S, Q](
   def transition(state: Q, input: S): Option[Q] =
     transitions.get((state, input))
 
-  /** Graphviz の DOT 形式に変換する。 */
   def toDot: String = Graphviz.digraph(
     "DFA",
     states,
@@ -34,8 +33,10 @@ class DFA[S, Q](
 
 object DFA {
   def fromNFA[S, Q](nfa: NFA[S, Q]): DFA[S, Set[Q]] = {
-    val startState = Set(nfa.startState)
-    val alphabets = nfa.alphabets
+    val nonEpsilonNFA = nfa.purgeEpsilonTransitions
+
+    val startState = Set(nonEpsilonNFA.startState)
+    val alphabets = nonEpsilonNFA.alphabets
 
     var transitions = Map.empty[(Set[Q], S), Set[Q]]
     var visitedStates = Set(startState)
@@ -46,7 +47,7 @@ object DFA {
       val currentStateSet = queue.dequeue()
       for (alphabet <- alphabets) {
         val nextStateSet = currentStateSet.flatMap(state =>
-          nfa.transition(state, Some(alphabet))
+          nonEpsilonNFA.transition(state, Some(alphabet))
         )
         if (nextStateSet.nonEmpty) {
           transitions += (currentStateSet, alphabet) -> nextStateSet
@@ -59,7 +60,7 @@ object DFA {
     }
 
     val acceptStates = visitedStates.filter(stateSet =>
-      stateSet.exists(state => nfa.acceptStates.contains(state))
+      stateSet.exists(state => nonEpsilonNFA.acceptStates.contains(state))
     )
 
     new DFA(

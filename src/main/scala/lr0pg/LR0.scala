@@ -14,6 +14,8 @@ class LR0(
     val productions: List[Production[?, ?]],
     val startSymbol: NonTerminalAlphabet[?]
 ) {
+  def automata = DFA.fromNFA(mkFA)
+
   override def toString: String = {
     val nonTerminalStr = nonTerminals.mkString(", ")
     val terminalStr = terminals.mkString(", ")
@@ -80,7 +82,7 @@ class LR0(
     new LR0(newNonTerminals, newTerminals, newProductions, startAlphabet)
   }
 
-  def mkFA: NFA[
+  private def mkFA: NFA[
     NonTerminalAlphabet[?] | TerminalAlphabet[?],
     DottedProduction[?, ?] | StartState
   ] = {
@@ -122,6 +124,19 @@ class LR0(
       startState,
       acceptStates,
       transitions
+    )
+  }
+
+  private val invalidStates = automata.states.filter { state =>
+    val (completed, incompleted) = state.collect {
+      case dp: DottedProduction[?, ?] => dp
+    }.partition(_.isComplete)
+    completed.size > 1 || (completed.nonEmpty && incompleted.nonEmpty)
+  }
+
+  if (invalidStates.nonEmpty) {
+    throw new IllegalArgumentException(
+      s"Invalid LR(0) grammar: conflicting states found: $invalidStates"
     )
   }
 }

@@ -8,8 +8,8 @@ package lr0pg
 
   val productions = List(
     Production(S, List(A, A)),
-    Production(A, List(open, A, close)),
-    Production(A, List())
+    Production(A, List(open, close)),
+    Production(A, List(open, A, close))
   )
 
   val lr0 = LR0(
@@ -22,18 +22,10 @@ package lr0pg
   val lr0Normalized = lr0.normalize
   println(lr0Normalized)
 
-  val epsilonNfa = lr0Normalized.mkFA
-  println(epsilonNfa)
-
-  val nfa = epsilonNfa.purgeEpsilonTransitions
-  println(nfa)
-
-  val dfa = DFA.fromNFA(nfa)
+  val dfa = lr0Normalized.automata
   println(dfa)
 
   val outputDir = os.pwd / "output"
   os.makeDir.all(outputDir)
-  os.write.over(outputDir / "epsilon-nfa.dot", epsilonNfa.toDot)
-  os.write.over(outputDir / "nfa.dot", nfa.toDot)
   os.write.over(outputDir / "dfa.dot", dfa.toDot)
 }
