@@ -25,6 +25,8 @@ package lr0pg
   val dfa = lr0Normalized.automata
   println(dfa)
 
+  println(LR0.format(lr0Normalized))
+
   val outputDir = os.pwd / "output"
   os.makeDir.all(outputDir)
   os.write.over(outputDir / "dfa.dot", dfa.toDot)

@@ -1,5 +1,10 @@
 package lr0pg
 
+import scala.collection.mutable.Queue
+
+type LR0DFAStateItem = DottedProduction[?, ?] | StartState
+type LR0DFAState = Set[LR0DFAStateItem]
+
 class StartState {
   override def toString: String = "s"
 }
@@ -8,13 +13,35 @@ class StartSymbol extends NonTerminalAlphabet[String]("S'")
 
 class EndSymbol extends TerminalAlphabet[String]("$")
 
+enum ActionType {
+  case Shift, Reduce, Accept
+}
+
+case class Action(
+    val actionType: ActionType,
+    val state: Option[LR0DFAState] = None,
+    val production: Option[Production[?, ?]] = None
+) {
+  override def toString: String = actionType match {
+    case ActionType.Shift =>
+      s"S(${state.getOrElse(throw new IllegalStateException("Shift action requires a state."))})"
+    case ActionType.Reduce =>
+      s"R(${production.getOrElse(throw new IllegalStateException("Reduce action requires a production."))})"
+    case ActionType.Accept => "A"
+  }
+}
+
 class LR0(
     val nonTerminals: List[NonTerminalAlphabet[?]],
     val terminals: List[TerminalAlphabet[?]],
     val productions: List[Production[?, ?]],
     val startSymbol: NonTerminalAlphabet[?]
 ) {
-  def automata = DFA.fromNFA(mkFA)
+  lazy val automata = DFA.fromNFA(mkFA)
+
+  /** 表の列や遷移の走査に使う、終端記号と非終端記号の並びです。 */
+  lazy val symbols: List[NonTerminalAlphabet[?] | TerminalAlphabet[?]] =
+    terminals ++ nonTerminals
 
   override def toString: String = {
     val nonTerminalStr = nonTerminals.mkString(", ")
@@ -30,7 +57,7 @@ class LR0(
         DottedProduction[?, ?] | StartState,
         Option[NonTerminalAlphabet[?] | TerminalAlphabet[?]]
     ),
-    Set[DottedProduction[?, ?] | StartState]
+    LR0DFAState
   ] = {
     if (dottedProduction.isComplete) {
       Map.empty
@@ -45,10 +72,10 @@ class LR0(
             DottedProduction[?, ?] | StartState,
             Option[NonTerminalAlphabet[?] | TerminalAlphabet[?]]
         ),
-        Set[DottedProduction[?, ?] | StartState]
+        LR0DFAState
       ] = nextSymbol match {
         case _: NonTerminalAlphabet[?] =>
-          val reduction: Set[DottedProduction[?, ?] | StartState] = productions
+          val reduction: LR0DFAState = productions
             .filter(_.lhs == nextSymbol)
             .map { production =>
               DottedProduction(production.lhs, production.rhs, 0)
@@ -66,12 +93,10 @@ class LR0(
   }
 
   def normalize: LR0 = {
-    val uniqueStartSymbol = new StartSymbol
-    val startAlphabet = NonTerminalAlphabet(uniqueStartSymbol)
+    val startAlphabet = new StartSymbol
     val newNonTerminals = startAlphabet :: nonTerminals
 
-    val uniqueEndSymbol = new EndSymbol
-    val endAlphabet = TerminalAlphabet(uniqueEndSymbol)
+    val endAlphabet = new EndSymbol
     val newTerminals = endAlphabet :: terminals
 
     val newProductions = Production(
@@ -92,7 +117,7 @@ class LR0(
     val states = startState :: productions.flatMap(p =>
       0.to(p.rhs.length).map(i => DottedProduction(p.lhs, p.rhs, i))
     )
-    val acceptStates: Set[DottedProduction[?, ?] | StartState] =
+    val acceptStates: LR0DFAState =
       productions
         .map(p =>
           DottedProduction(
@@ -107,7 +132,7 @@ class LR0(
           DottedProduction[?, ?] | StartState,
           Option[NonTerminalAlphabet[?] | TerminalAlphabet[?]]
       ),
-      Set[DottedProduction[?, ?] | StartState]
+      LR0DFAState
     ] = states.flatMap {
       case state: DottedProduction[?, ?] =>
         dottedProductionTransitions(state)
@@ -127,10 +152,56 @@ class LR0(
     )
   }
 
+  lazy val actionTable: Map[
+    (
+        LR0DFAState,
+        NonTerminalAlphabet[?] | TerminalAlphabet[?]
+    ),
+    Action
+  ] = {
+    automata.states.flatMap { state =>
+      val endSymbol = EndSymbol()
+
+      if (
+        state.exists {
+          case dp: DottedProduction[?, ?] =>
+            dp.lhs == startSymbol && dp.rhs.last
+              .isInstanceOf[EndSymbol] && dp.isComplete
+          case _ => false
+        }
+      ) {
+        Some((state, endSymbol) -> Action(ActionType.Accept))
+      } else {
+        val shifts = symbols.flatMap { symbol =>
+          automata
+            .transition(state, symbol)
+            .map(nextState =>
+              (state, symbol) -> Action(
+                ActionType.Shift,
+                state = Some(nextState)
+              )
+            )
+        }
+        val reduces = state.collect {
+          case dp: DottedProduction[?, ?] if dp.isComplete =>
+            val production =
+              productions.find(p => p.lhs == dp.lhs && p.rhs == dp.rhs).get
+            (state, dp.rhs.last) -> Action(
+              ActionType.Reduce,
+              production = Some(production)
+            )
+        }
+        shifts ++ reduces
+      }
+    }.toMap
+  }
+
   private val invalidStates = automata.states.filter { state =>
-    val (completed, incompleted) = state.collect {
-      case dp: DottedProduction[?, ?] => dp
-    }.partition(_.isComplete)
+    val (completed, incompleted) = state
+      .collect { case dp: DottedProduction[?, ?] =>
+        dp
+      }
+      .partition(_.isComplete)
     completed.size > 1 || (completed.nonEmpty && incompleted.nonEmpty)
   }
 
@@ -139,4 +210,62 @@ class LR0(
       s"Invalid LR(0) grammar: conflicting states found: $invalidStates"
     )
   }
+}
+
+object LR0 {
+  def format(lr0: LR0): String = {
+    val symbols = lr0.symbols
+    val numbers = stateNumbers(lr0)
+    val states = numbers.toList.sortBy(_._2).map(_._1)
+
+    val header = "State" :: symbols.map(_.toString)
+    val rows = states.map { state =>
+      stateName(numbers, state) :: symbols.map { symbol =>
+        lr0.actionTable.get((state, symbol)).map(cell(numbers, _)).getOrElse("")
+      }
+    }
+
+    val widths = (header :: rows).transpose.map(_.map(_.length).max)
+    def line(row: List[String]): String =
+      row.zip(widths).map { case (c, w) => c.padTo(w, ' ') }.mkString(" | ")
+    val separator = widths.map("-" * _).mkString("-+-")
+
+    val legend = states.map { state =>
+      val items = state.map(_.toString).toList.sorted.mkString(", ")
+      s"${stateName(numbers, state)} = { $items }"
+    }
+
+    (line(header) :: separator :: rows.map(line) ::: "" :: legend)
+      .mkString("\n")
+  }
+
+  private def stateNumbers(lr0: LR0): Map[LR0DFAState, Int] = {
+    val queue = Queue(lr0.automata.startState)
+    var numbers = Map(lr0.automata.startState -> 0)
+    while (queue.nonEmpty) {
+      val state = queue.dequeue()
+      for {
+        symbol <- lr0.symbols
+        nextState <- lr0.automata.transition(state, symbol)
+        if !numbers.contains(nextState)
+      } {
+        numbers += nextState -> numbers.size
+        queue.enqueue(nextState)
+      }
+    }
+    numbers
+  }
+
+  private def stateName(
+      numbers: Map[LR0DFAState, Int],
+      state: LR0DFAState
+  ): String =
+    s"I${numbers(state)}"
+
+  private def cell(numbers: Map[LR0DFAState, Int], action: Action): String =
+    action.actionType match {
+      case ActionType.Shift  => s"s${numbers(action.state.get)}"
+      case ActionType.Reduce => s"r ${action.production.get}"
+      case ActionType.Accept => "acc"
+    }
 }
