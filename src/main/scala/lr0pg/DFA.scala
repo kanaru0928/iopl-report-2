@@ -12,6 +12,17 @@ class DFA[S, Q](
   def transition(state: Q, input: S): Option[Q] =
     transitions.get((state, input))
 
+  /** Graphviz の DOT 形式に変換する。 */
+  def toDot: String = Graphviz.digraph(
+    "DFA",
+    states,
+    startState,
+    acceptStates,
+    transitions.toSeq.map { case ((state, input), nextState) =>
+      (state, input.toString, nextState)
+    }
+  )
+
   override def toString: String = {
     val transitionStrings = transitions.map {
       case ((state, input), nextState) =>
