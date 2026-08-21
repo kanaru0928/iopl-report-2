@@ -45,7 +45,6 @@ class Parser(val lr0: LR0) {
           0 until production.rhs.length foreach { _ =>
             stack.pop()
           }
-          // 先読み記号を入力に戻し、goto の後に読み直します。
           inputWithEndSymbol.prepend(x)
           x = production.lhs
 

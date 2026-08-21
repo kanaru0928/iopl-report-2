@@ -37,9 +37,8 @@ class LR0(
     val productions: List[Production[?, ?]],
     val startSymbol: NonTerminalAlphabet[?]
 ) {
-  lazy val automata = DFA.fromNFA(mkFA)
+  val automata = DFA.fromNFA(mkFA)
 
-  /** 表の列や遷移の走査に使う、終端記号と非終端記号の並びです。 */
   lazy val symbols: List[NonTerminalAlphabet[?] | TerminalAlphabet[?]] =
     terminals ++ nonTerminals
 
@@ -186,7 +185,6 @@ class LR0(
           case dp: DottedProduction[?, ?] if dp.isComplete =>
             val production =
               productions.find(p => p.lhs == dp.lhs && p.rhs == dp.rhs).get
-            // LR(0) では先読みに関わらず reduce するため、全終端記号の列に置きます。
             terminals.map { terminal =>
               (state, terminal) -> Action(
                 ActionType.Reduce,
