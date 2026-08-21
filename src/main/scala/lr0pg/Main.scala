@@ -19,15 +19,10 @@ package lr0pg
     startSymbol = S
   )
 
-  val lr0Normalized = lr0.normalize
-  println(lr0Normalized)
+  val parser = Parser(lr0)
 
-  val dfa = lr0Normalized.automata
-  println(dfa)
-
-  println(LR0.format(lr0Normalized))
-
-  val outputDir = os.pwd / "output"
-  os.makeDir.all(outputDir)
-  os.write.over(outputDir / "dfa.dot", dfa.toDot)
+  val input = List(open, open, close, close, open, close)
+  println(s"Parsing input: ${input.mkString(" ")}")
+  val result = parser.parse(input)
+  println(s"Parsing result: $result")
 }

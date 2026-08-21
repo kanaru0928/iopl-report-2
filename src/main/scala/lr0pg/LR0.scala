@@ -182,15 +182,18 @@ class LR0(
               )
             )
         }
-        val reduces = state.collect {
+        val reduces = state.toSeq.collect {
           case dp: DottedProduction[?, ?] if dp.isComplete =>
             val production =
               productions.find(p => p.lhs == dp.lhs && p.rhs == dp.rhs).get
-            (state, dp.rhs.last) -> Action(
-              ActionType.Reduce,
-              production = Some(production)
-            )
-        }
+            // LR(0) では先読みに関わらず reduce するため、全終端記号の列に置きます。
+            terminals.map { terminal =>
+              (state, terminal) -> Action(
+                ActionType.Reduce,
+                production = Some(production)
+              )
+            }
+        }.flatten
         shifts ++ reduces
       }
     }.toMap
