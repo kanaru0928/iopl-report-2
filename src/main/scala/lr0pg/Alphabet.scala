@@ -1,11 +1,11 @@
 package lr0pg
 
-sealed abstract class Alphabet[T]
+sealed abstract class Alphabet[+T]
 
-case class TerminalAlphabet[T](val symbol: String) extends Alphabet[T] {
-  override def toString: String = symbol
+case class TerminalAlphabet[+T](val symbol: T) extends Alphabet[T] {
+  override def toString: String = symbol.toString()
 }
 
-case class NonTerminalAlphabet[T](val symbol: String) extends Alphabet[T] {
-  override def toString: String = symbol
+case class NonTerminalAlphabet[+T](val symbol: T) extends Alphabet[T] {
+  override def toString: String = symbol.toString()
 }

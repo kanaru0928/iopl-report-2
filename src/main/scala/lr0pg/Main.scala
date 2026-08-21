@@ -1,17 +1,28 @@
 package lr0pg
 
 @main def main(): Unit = {
-  val nfa = new NFA(
-    Set(0, 1),
-    Set(0, 1, 2),
-    0,
-    Set(2),
-    Map(
-      (0, Some(0)) -> Set(0, 1),
-      (0, Some(1)) -> Set(0),
-      (1, Some(1)) -> Set(2)
-    )
+  val S = NonTerminalAlphabet("S")
+  val A = NonTerminalAlphabet("A")
+  val open = TerminalAlphabet("(")
+  val close = TerminalAlphabet(")")
+
+  val productions = List(
+    Production(S, List(A, A)),
+    Production(A, List(open, A, close)),
+    Production(A, List())
   )
+
+  val lr0 = LR0(
+    nonTerminals = List(S, A),
+    terminals = List(open, close),
+    productions = productions,
+    startSymbol = S
+  )
+
+  val lr0Normalized = lr0.normalize
+  println(lr0Normalized)
+
+  val nfa = lr0Normalized.mkFA
   println(nfa)
 
   val dfa = DFA.fromNFA(nfa)
