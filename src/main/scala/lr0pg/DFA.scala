@@ -38,6 +38,7 @@ object DFA {
     val alphabets = nfa.alphabets
 
     var transitions = Map.empty[(Set[Q], S), Set[Q]]
+    var visitedStates = Set(startState)
 
     val queue = Queue[Set[Q]]()
     queue.enqueue(startState)
@@ -49,32 +50,23 @@ object DFA {
         )
         if (nextStateSet.nonEmpty) {
           transitions += (currentStateSet, alphabet) -> nextStateSet
-          if (!transitions.contains((nextStateSet, alphabet))) {
+          if (!visitedStates.contains(nextStateSet)) {
+            visitedStates += nextStateSet
             queue.enqueue(nextStateSet)
           }
         }
       }
     }
 
-    val states = transitions.keys.map(_._1).toSet + startState
-    val acceptStates = states.filter(stateSet =>
+    val acceptStates = visitedStates.filter(stateSet =>
       stateSet.exists(state => nfa.acceptStates.contains(state))
     )
 
-    val availableStates = states
-      .filter(stateSet =>
-        alphabets.forall(alphabet => transitions.contains((stateSet, alphabet)))
-      )
-      .toSet
-    transitions = transitions.filter { case ((stateSet, _), _) =>
-      availableStates.contains(stateSet)
-    }
-
     new DFA(
       alphabets,
-      states.toSet,
+      visitedStates,
       startState,
-      acceptStates.toSet,
+      acceptStates,
       transitions
     )
   }

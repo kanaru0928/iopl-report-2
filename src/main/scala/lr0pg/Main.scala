@@ -22,9 +22,18 @@ package lr0pg
   val lr0Normalized = lr0.normalize
   println(lr0Normalized)
 
-  val nfa = lr0Normalized.mkFA
+  val epsilonNfa = lr0Normalized.mkFA
+  println(epsilonNfa)
+
+  val nfa = epsilonNfa.purgeEpsilonTransitions
   println(nfa)
 
   val dfa = DFA.fromNFA(nfa)
   println(dfa)
+
+  val outputDir = os.pwd / "output"
+  os.makeDir.all(outputDir)
+  os.write.over(outputDir / "epsilon-nfa.dot", epsilonNfa.toDot)
+  os.write.over(outputDir / "nfa.dot", nfa.toDot)
+  os.write.over(outputDir / "dfa.dot", dfa.toDot)
 }

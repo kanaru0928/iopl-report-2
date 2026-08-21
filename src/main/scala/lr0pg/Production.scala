@@ -5,7 +5,7 @@ case class Production[N, T](
     val lhs: NonTerminalAlphabet[N],
     val rhs: List[NonTerminalAlphabet[N] | TerminalAlphabet[T]]
 ) {
-  override def toString: String = s"$lhs -> ${rhs.mkString(" ")}"
+  override def toString: String = s"[$lhs -> ${rhs.mkString(" ")}]"
 }
 
 case class DottedProduction[N, T](
@@ -15,7 +15,7 @@ case class DottedProduction[N, T](
 ) {
   override def toString: String = {
     val (beforeDot, afterDot) = rhs.splitAt(dotPosition)
-    s"$lhs -> ${beforeDot.mkString(" ")} . ${afterDot.mkString(" ")}"
+    s"[$lhs -> ${beforeDot.mkString(" ")} . ${afterDot.mkString(" ")}]"
   }
 
   def isComplete: Boolean = dotPosition >= rhs.length
